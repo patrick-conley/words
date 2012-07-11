@@ -1,0 +1,98 @@
+#!/bin/bash
+# Random words
+
+help() # {{{1
+{
+   cat <<EOT
+words [ -p prefixes ]* [ dict-path ]
+
+Print a random word from the system dictionary.
+
+If the -p option is given, only words starting with its argument will be
+displayed, ie.,
+      $ words -p \$prefixes
+   displays only words matching /^\$prefixes.*/
+Multiple -p strings can be given, to select several valid prefixeses.
+
+The argument dict-path specifies the path to the system dictionary, in case it
+isn't in its default location.
+
+Press '<Enter>' for more words.
+Quit with 'q'.
+EOT
+
+} 
+
+check_word() # {{{1
+{
+   word=$1
+   prefixes="${@:2}"
+
+   for prefix in $prefixes
+   do
+      if [[ $( echo $word | grep "^$prefix" ) ]]; then
+         echo 0 && return
+      fi
+   done
+
+   echo 1
+} # }}}1
+
+declare -a prefixes
+last_index=0
+
+while getopts "p:" opt
+do
+	case $opt in
+
+      p  ) prefixes[$last_index]=$OPTARG; last_index=$((last_index+1)) ;;
+      h  ) help ;;
+		\? ) echo 'usage: words [ -l letters ] [ dict-path ]'
+ 		     exit 1
+	esac
+done
+shift $(($OPTIND-1))
+
+# Make sure there's at least one valid prefix
+if [[ -z "$prefixes" ]]; then
+   prefixes='.\+'
+fi
+
+# Set the dictionary to use
+DICTIONARY="$1"
+
+if [[ ! -f "$DICTIONARY" ]]
+then
+	DICTIONARY="/usr/share/dict/words"
+	echo "defaulting to $DICTIONARY"
+fi
+
+if [[ ! -e "$DICTIONARY" ]]
+then
+   echo "$DICTIONARY doesn't exist. Aborting"
+   exit 2
+fi
+
+# Read and display input
+
+LINE_MAX=$( wc -l $DICTIONARY | awk '{print $1}' )
+IN=""
+
+echo
+
+while [ "${IN::1}" != "q" ]
+do
+   LINE_NUM=$(( (($RANDOM & 3)<<30 | $RANDOM<<15 | $RANDOM ) % LINE_MAX + 1 ))
+   LINE=$( head -n $LINE_NUM $DICTIONARY | tail -n 1 )
+
+   while [[ $( check_word "$LINE" "$prefixes" ) -ne 0 ]]
+   do
+      LINE_NUM=$(( (($RANDOM & 3)<<30 | $RANDOM<<15 | $RANDOM ) % LINE_MAX + 1 ))
+      LINE=$( head -n $LINE_NUM $DICTIONARY | tail -n 1 )
+   done
+
+   echo $LINE
+	
+   echo -n "> "
+   read IN
+done

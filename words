@@ -1,5 +1,7 @@
 #!/bin/bash
-# Random words
+# Print random words to stdout
+
+DICTIONARY="/usr/share/dict/words"
 
 help() # {{{1
 {
@@ -23,55 +25,52 @@ EOT
 
 } 
 
-check_word() # {{{1
+construct_dict() # {{{1
 {
-   word=$1
-   prefixes="${@:2}"
+   prefixes=$@
+   dict=$( mktemp -t words.XXX )
 
-   for prefix in $prefixes
+   if [[ -z "$prefixes" ]]; then
+      return 1
+   fi
+
+   for prefix in ${prefixes[@]}
    do
-      if [[ $( echo $word | grep "^$prefix" ) ]]; then
-         echo 0 && return
-      fi
+      grep "^$prefix" $DICTIONARY >> $dict
    done
 
-   echo 1
-} # }}}1
+   DICTIONARY=$dict
+}
+
+# }}}1
 
 declare -a prefixes
 last_index=0
 
+# Read options
 while getopts "p:" opt
 do
 	case $opt in
 
       p  ) prefixes[$last_index]=$OPTARG; last_index=$((last_index+1)) ;;
       h  ) help ;;
-		\? ) echo 'usage: words [ -l letters ] [ dict-path ]'
+		\? ) echo 'usage: words [ -p prefix ]* [ dict-path ]'
  		     exit 1
 	esac
 done
 shift $(($OPTIND-1))
 
-# Make sure there's at least one valid prefix
-if [[ -z "$prefixes" ]]; then
-   prefixes='.\+'
-fi
-
 # Set the dictionary to use
-DICTIONARY="$1"
-
-if [[ ! -f "$DICTIONARY" ]]
-then
-	DICTIONARY="/usr/share/dict/words"
-	echo "defaulting to $DICTIONARY"
+if [[ $# -eq 1 ]]; then
+   DICTIONARY="$1"
+	echo "Using $DICTIONARY as system dictionary"
 fi
 
-if [[ ! -e "$DICTIONARY" ]]
-then
-   echo "$DICTIONARY doesn't exist. Aborting"
+if [[ ! -e "$DICTIONARY" ]]; then
    exit 2
 fi
+
+construct_dict $prefixes
 
 # Read and display input
 
@@ -84,12 +83,6 @@ while [ "${IN::1}" != "q" ]
 do
    LINE_NUM=$(( (($RANDOM & 3)<<30 | $RANDOM<<15 | $RANDOM ) % LINE_MAX + 1 ))
    LINE=$( head -n $LINE_NUM $DICTIONARY | tail -n 1 )
-
-   while [[ $( check_word "$LINE" "$prefixes" ) -ne 0 ]]
-   do
-      LINE_NUM=$(( (($RANDOM & 3)<<30 | $RANDOM<<15 | $RANDOM ) % LINE_MAX + 1 ))
-      LINE=$( head -n $LINE_NUM $DICTIONARY | tail -n 1 )
-   done
 
    echo $LINE
 	

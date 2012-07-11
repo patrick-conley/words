@@ -12,9 +12,9 @@ Print a random word from the system dictionary.
 
 If the -p option is given, only words starting with its argument will be
 displayed, ie.,
-      $ words -p \$prefixes
+   $ words -p \$prefixes
    displays only words matching /^\$prefixes.*/
-Multiple -p strings can be given, to select several valid prefixeses.
+Multiple -p strings can be given, to select several valid prefixes.
 
 The argument dict-path specifies the path to the system dictionary, in case it
 isn't in its default location.
@@ -48,12 +48,12 @@ declare -a prefixes
 last_index=0
 
 # Read options
-while getopts "p:" opt
+while getopts "p:h" opt
 do
 	case $opt in
 
       p  ) prefixes[$last_index]=$OPTARG; last_index=$((last_index+1)) ;;
-      h  ) help ;;
+      h  ) help && exit 0 ;;
 		\? ) echo 'usage: words [ -p prefix ]* [ dict-path ]'
  		     exit 1
 	esac

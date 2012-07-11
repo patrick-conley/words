@@ -20,3 +20,9 @@ Run
     words -h
 
 for basic usage notes.
+
+Licence
+=======
+
+Copyright 2012 Greg Conley
+Not for redistribution or reuse

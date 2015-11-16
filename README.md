@@ -5,10 +5,17 @@ A simple bash script that prints a series of random words from the system
 dictionary. It offers basic ability to limit the selection of words that can be
 displayed.
 
+Note
+----
+
+If GNU coreutils are installed, this script can be replaced with
+
+    cat /usr/share/dict/words | shuf -n 1
+
 Installation
 ============
 
-Simply run
+Just run
 
     git clone git@github.com:patrick-conley/words.git
 
